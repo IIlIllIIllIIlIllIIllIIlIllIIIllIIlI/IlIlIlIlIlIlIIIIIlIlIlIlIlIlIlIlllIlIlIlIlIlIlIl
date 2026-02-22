@@ -25,7 +25,7 @@ Welcome.BackgroundTransparency = 1
 Welcome.Font = Enum.Font.GothamBold
 Welcome.TextColor3 = Color3.new(1, 1, 1)
 Welcome.TextSize = 16
-Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nOceaHub: FTP Hub Edition\n• Fake MS / MS Boost Added\n• Ocea React Added."
+Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nOceaHub: FTP Hub Edition\n• Unlimited Stamina Added\n• 23.02.26."
 
 local OK = Instance.new("TextButton", Main)
 OK.Size = UDim2.fromOffset(160, 45)
@@ -159,6 +159,80 @@ ReactSection:Slider({
     Name = "React Distance", Default = 5, Minimum = 1, Maximum = 15,
     Callback = function(Value) ReactDist = Value end
 })
+-- [[ 1. REACT SECTION OLUŞTURMA ]]
+local ReactSection = tabs.React:Section({ Side = "Left" })
+ReactSection:Header({ Name = "Stamina" })
+
+ReactSection:Button({
+    Name = "Unlimited Stamina: ACTIVE",
+    Callback = function()
+        Window:Notify({ Title = "OceaHub", Description = "Stamina & Speed Lock is running!", Lifetime = 3 })
+    end
+})
+
+ReactSection:Label({ Name = "Click: 23 Speed | R: 16 Speed" })
+
+-- [[ 2. HAREKET & STAMINA MOTORU ]]
+-- Değişkenleri local olarak burada tekrar tanımlıyoruz (Garanti olsun)
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local LP = game:GetService("Players").LocalPlayer
+
+local WALK_SPEED = 16    
+local RUN_SPEED = 23     
+local targetSpeed = 23   
+
+-- 186. Satırdaki hatayı engelleyen güvenli bağlantı
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        targetSpeed = RUN_SPEED
+        print("OceaHub: KOSMA (23)")
+    elseif input.KeyCode == Enum.KeyCode.R then
+        targetSpeed = WALK_SPEED
+        print("OceaHub: YURUME (16)")
+    end
+end)
+
+-- Metatable Kilidi
+local mt = getrawmetatable(game)
+local old_newindex = mt.__newindex
+setreadonly(mt, false)
+
+mt.__newindex = newcclosure(function(t, k, v)
+    if not checkcaller() and t:IsA("Humanoid") and t.Parent == LP.Character then
+        if k == "WalkSpeed" and tonumber(v) ~= targetSpeed then
+            return old_newindex(t, k, targetSpeed)
+        end
+    end
+    return old_newindex(t, k, v)
+end)
+setreadonly(mt, true)
+
+-- Ana Döngü
+RS.Heartbeat:Connect(function()
+    local char = LP.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if hum.WalkSpeed ~= targetSpeed then
+            hum.WalkSpeed = targetSpeed
+        end
+    end
+end)
+
+-- Stamina Bypass (Senin çalışan getgc mantığın)
+task.spawn(function()
+    while true do
+        for _, v in pairs(getgc(true)) do
+            if type(v) == "table" and rawget(v, "MAX_STAMINA") then
+                v.MAX_STAMINA = 100
+                v.CURRENT_STAMINA = 100
+                v.STAMINA_DRAIN_RATE = 0
+            end
+        end
+        task.wait(5)
+    end
+end)
 
 -- FIRETOUCH SECTION
 local FireTouchLeft = tabs.FireTouch:Section({ Side = "Left" })
@@ -174,6 +248,8 @@ CreateReachSlider("Right Leg")
 CreateReachSlider("Torso")
 CreateReachSlider("Head")
 CreateReachSlider("GK")
+
+
 
 MacLib:SetFolder("OceaHub")
 tabs.Settings:InsertConfigSection("Left")
