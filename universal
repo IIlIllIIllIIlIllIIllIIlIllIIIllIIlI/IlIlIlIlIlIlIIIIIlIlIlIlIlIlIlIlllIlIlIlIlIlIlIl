@@ -1,0 +1,40 @@
+-- ==========================================
+-- OCEAHUB UNIVERSAL LOADER (v1.0)
+-- ==========================================
+
+local currentPlaceId = game.PlaceId
+local MarketService = game:GetService("MarketplaceService")
+
+-- 1. OYUN: TPS (XHub)
+local TPS_IDs = {
+    [5783581] = true,    -- Main / Private Server
+    [335760172] = true,  -- Private Training
+    [289425484] = true,  -- Public Training
+    [8368280919] = true  -- Ranked Mode
+}
+
+-- 2. OYUN: FTPHub
+local FTP_IDs = {
+    [114548531551340] = true, -- Lobby
+    [133147043992800] = true, -- Test Pitch
+    [72387183396865] = true   -- Match Pitch
+}
+
+-- Kontrol ve Yükleme Mantığı
+if TPS_IDs[currentPlaceId] then
+    -- TPS Scriptini Yükle
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/XHubIlIlIIll"))()
+
+elseif FTP_IDs[currentPlaceId] then
+    -- FTP Scriptini Yükle
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/hub"))()
+
+else
+    -- DESTEKLENMEYEN OYUN DURUMU
+    local success, gameInfo = pcall(function()
+        return MarketService:GetProductInfo(game.PlaceId)
+    end)
+    
+    local gameName = success and gameInfo.Name or "Unknown Game"
+    game.Players.LocalPlayer:Kick('OceaHub does not support "' .. gameName .. '".')
+end
