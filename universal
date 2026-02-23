@@ -1,5 +1,5 @@
 -- ==========================================
--- OCEAHUB UNIVERSAL LOADER (v1.0)
+-- OCEAHUB UNIVERSAL LOADER (v1.1)
 -- ==========================================
 
 local currentPlaceId = game.PlaceId
@@ -20,6 +20,12 @@ local FTP_IDs = {
     [72387183396865] = true   -- Match Pitch
 }
 
+-- 3. OYUN: XLS
+local XLS_IDs = {
+    [117935576419329] = true, -- Match Server
+    [103705340499468] = true  -- Public & Private Training
+}
+
 -- Kontrol ve Yükleme Mantığı
 if TPS_IDs[currentPlaceId] then
     -- TPS Scriptini Yükle
@@ -29,8 +35,12 @@ elseif FTP_IDs[currentPlaceId] then
     -- FTP Scriptini Yükle
     loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/hub"))()
 
+elseif XLS_IDs[currentPlaceId] then
+    -- XLS Scriptini Yükle
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/xs"))()
+
 else
-    -- DESTEKLENMEYEN OYUN DURUMU
+    -- DESTEKLENMEYEN OYUN DURUMU (Otomatik Kick)
     local success, gameInfo = pcall(function()
         return MarketService:GetProductInfo(game.PlaceId)
     end)
