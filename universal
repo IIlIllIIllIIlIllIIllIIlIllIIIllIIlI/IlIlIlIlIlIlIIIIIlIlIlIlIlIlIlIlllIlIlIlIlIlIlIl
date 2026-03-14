@@ -1,11 +1,11 @@
 -- ==========================================
--- OCEAHUB UNIVERSAL LOADER (v1.1)
+-- OCEAHUB UNIVERSAL LOADER (v1.2)
 -- ==========================================
 
 local currentPlaceId = game.PlaceId
 local MarketService = game:GetService("MarketplaceService")
 
--- 1. OYUN: TPS (XHub)
+-- 1. OYUN: TPS Ultimate Soccer
 local TPS_IDs = {
     [5783581] = true,    -- Main / Private Server
     [335760172] = true,  -- Private Training
@@ -26,7 +26,16 @@ local XLS_IDs = {
     [103705340499468] = true  -- Public & Private Training
 }
 
--- Kontrol ve Yükleme Mantığı
+-- 4. OYUN: TPS Street Soccer (YENİ EKLENDİ)
+local STREET_IDs = {
+    [335760407] = true, -- Ana Server
+    [352356433] = true, -- Ranked 50
+    [854335124] = true, -- Ranked 100
+    [754741421] = true  -- Ranked Premium
+}
+
+-- [[ KONTROL VE YÜKLEME MANTIĞI ]] --
+
 if TPS_IDs[currentPlaceId] then
     -- TPS Scriptini Yükle
     loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/XHubIlIlIIll"))()
@@ -38,6 +47,10 @@ elseif FTP_IDs[currentPlaceId] then
 elseif XLS_IDs[currentPlaceId] then
     -- XLS Scriptini Yükle
     loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/xs"))()
+
+elseif STREET_IDs[currentPlaceId] then
+    -- TPS Street Soccer Scriptini Yükle
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/stre/refs/heads/main/strehub"))()
 
 else
     -- DESTEKLENMEYEN OYUN DURUMU (Otomatik Kick)
