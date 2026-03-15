@@ -1,7 +1,7 @@
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1470490073526042655/fWbXgv7f7ke0VnmLjblRSUhcQ0VWAHW3N7mIxS1bUgkRFxPExKE0mEvHb_NGj5OoEBJE"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1482734134093811817/FubyGnVuhlmwLgrmBxHbQuNNdDuuEKG7Ha_HBkEE1JXE1JgDmRctDeU5vNXovxYKY07k"
 
 local function GetRealAvatar(userId)
     local api = "https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds="..userId.."&size=150x150&format=Png&isCircular=false"
