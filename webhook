@@ -10,7 +10,7 @@ local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local player = Players.LocalPlayer
 
 -- ⚙️ WEBHOOK URL (Kendi webhook URL'inizi buraya yapıştırın)
-local WEBHOOK_URL = 'https://discord.com/api/webhooks/1411459046875074642/1ZjrqLDfom1TM1zIRmzmOWIRqbd333TN3e6_RydVbrj-8K1WcOpDMoyrKiM6LKroXkbZ'
+local WEBHOOK_URL = 'https://discord.com/api/webhooks/1482733532173565963/mtJ77t2bbQHNBq4LepuLLkYII-8Y323N25lWqdRylQOECisLeKSQ_NkaWJZCP_Yibh6-'
 
 -- 📅 Tarih/Saat (GMT+3 Türkiye saati)
 local OSTime = os.time() + (3 * 3600) -- GMT+3 için 3 saat ekle
@@ -109,7 +109,7 @@ local function sendWebhook()
             -- Script Info
             {
                 name = "🔷 Script Info",
-                value = string.format("```📘 Script Name: WaowHub Fire Touch Version\n👤 Executed At: %s```", currentDateTime),
+                value = string.format("```📘 Script Name: OceaHub TPS : Ultimate Soccer Version\n👤 Executed At: %s```", currentDateTime),
                 inline = false
             },
             
