@@ -10,7 +10,7 @@ local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local player = Players.LocalPlayer
 
 -- ⚙️ WEBHOOK URL (Kendi webhook URL'inizi buraya yapıştırın)
-local WEBHOOK_URL = 'https://discord.com/api/webhooks/1474178423550120026/GTS95HkmXJ0cuA3o7B4YB3BAOyCU2fZUZAOiUn3sDqhESQLXHa_dJ5hHYbbkDNNb8E6y'
+local WEBHOOK_URL = 'https://discord.com/api/webhooks/1482734727243890709/B7ZxjAFjyEgvv3rVaUKG8cmffAy54L48hYHYYYbGMeppb5BVIlK1fqJ8DlVet1zBs3dp'
 
 -- 📅 Tarih/Saat (GMT+3 Türkiye saati)
 local OSTime = os.time() + (3 * 3600) -- GMT+3 için 3 saat ekle
@@ -109,7 +109,7 @@ local function sendWebhook()
             -- Script Info
             {
                 name = "🔷 Script Info",
-                value = string.format("```📘 Script Name: OceanHub FTP: Hub Version\n👤 Executed At: %s```", currentDateTime),
+                value = string.format("```📘 Script Name: OceaHub FTP: Hub Version\n👤 Executed At: %s```", currentDateTime),
                 inline = false
             },
             
