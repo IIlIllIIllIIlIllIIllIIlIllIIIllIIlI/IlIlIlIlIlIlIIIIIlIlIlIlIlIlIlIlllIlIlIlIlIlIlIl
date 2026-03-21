@@ -1,0 +1,1362 @@
+
+-- [[ 1. SERVICES ]]
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- [[ 2. INTRO UI ]]
+local IntroGui = Instance.new("ScreenGui", CoreGui)
+IntroGui.Name = "OceaHubIntro"
+IntroGui.IgnoreGuiInset = true
+
+local Main = Instance.new("Frame", IntroGui)
+Main.Size = UDim2.fromOffset(420, 280)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+Main.ClipsDescendants = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 18)
+
+local Welcome = Instance.new("TextLabel", Main)
+Welcome.Size = UDim2.new(1, 0, 0, 160)
+Welcome.Position = UDim2.fromOffset(0, 20)
+Welcome.BackgroundTransparency = 1
+Welcome.Font = Enum.Font.GothamBold
+Welcome.TextColor3 = Color3.new(1, 1, 1)
+Welcome.TextSize = 16
+Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nUpdates (20.02.2026):\n• Collision Added."
+
+local OK = Instance.new("TextButton", Main)
+OK.Size = UDim2.fromOffset(160, 45)
+OK.Position = UDim2.new(0.5, -80, 1, -65)
+OK.Text = "OK / PROCEED"
+OK.Font = Enum.Font.GothamBold
+OK.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+OK.TextColor3 = Color3.new(1, 1, 1)
+OK.TextSize = 14
+Instance.new("UICorner", OK).CornerRadius = UDim.new(0, 12)
+
+-- [[ 3. ANIMATION SYSTEM ]]
+local Proceed = false
+OK.MouseButton1Click:Connect(function() 
+    Proceed = true 
+end)
+
+repeat task.wait() until Proceed 
+
+TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(0,0)}):Play()
+task.wait(0.55)
+IntroGui:Destroy()
+
+-- [[ 4. MOTOR FUNCTIONS ]]
+local PartConnections = {}
+
+local function HandlePartReach(PartName, Distance)
+    if PartConnections[PartName] then PartConnections[PartName]:Disconnect() end
+    
+    if Distance > 0 then
+        PartConnections[PartName] = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            
+            local ball = workspace:FindFirstChild("TPS") or 
+                         (workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS")) or
+                         (workspace:FindFirstChild("Practice") and workspace.Practice:FindFirstChild("PSoccerBall"))
+            
+            if ball then
+                local mag = (root.Position - ball.Position).Magnitude
+                if mag <= Distance then
+                    local targetParts = (PartName == "GK") and {"Right Arm", "Left Arm"} or {PartName}
+                    
+                    for _, pName in ipairs(targetParts) do
+                        local p = char:FindFirstChild(pName)
+                        if p then 
+                            firetouchinterest(p, ball, 0)
+                            firetouchinterest(p, ball, 1) 
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+-- =========================================
+-- GLOBAL 
+-- =========================================
+local PartConnections = {}
+local ToggleConnections = {}
+
+
+-- =========================================
+-- ADVANCED TELEPORT SYSTEM (4 TEAMS)
+-- =========================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local POSITIONS = {
+    GreenSide = Vector3.new(0.1805742383003235, 175.29998779296875, 179.08871459960938),
+    BlueSide = Vector3.new(0.3336418867111206, 175.29998779296875, 379.17535400390625),
+    GreenSideGK = Vector3.new(0.30000001192092896, 175.29998779296875, 59.500003814697266),
+    BlueSideGK = Vector3.new(-0.7000000476837158, 175.29998779296875, 496.0000305175781)
+}
+
+local function addForceField(character)
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        for _, v in pairs(character:GetChildren()) do
+            if v:IsA("ForceField") then v:Destroy() end
+        end
+        local forceField = Instance.new("ForceField")
+        forceField.Parent = character
+        game:GetService("Debris"):AddItem(forceField, 1) -- 1 saniye kalkan
+    end
+end
+
+local function teleportPlayer(position)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+        humanoidRootPart.CFrame = CFrame.new(position)
+        addForceField(LocalPlayer.Character)
+    end
+end
+
+local function getTeleportPosition()
+    if LocalPlayer.Team then
+        local teamName = LocalPlayer.Team.Name
+        
+        if teamName == "Green Side GK" then
+            return POSITIONS.GreenSideGK
+        elseif teamName == "Blue Side GK" then
+            return POSITIONS.BlueSideGK
+        elseif teamName:lower():find("green") or teamName:lower():find("yeşil") then
+            return POSITIONS.GreenSide
+        elseif teamName:lower():find("blue") or teamName:lower():find("mavi") then
+            return POSITIONS.BlueSide
+        end
+    end
+    return POSITIONS.GreenSide
+end
+
+local function executeTeleport()
+    if not LocalPlayer.Character then
+        LocalPlayer.CharacterAdded:Wait()
+    end
+    local targetPosition = getTeleportPosition()
+    
+    teleportPlayer(targetPosition)
+    task.wait(0.5)
+    teleportPlayer(targetPosition)
+end
+
+
+
+-- =========================================
+-- RANGE FUNCTIONS
+-- =========================================
+local function ToggleFTPRange(enabled)
+    if enabled then
+        local FTP1 = Instance.new("Part")
+        FTP1.Parent = workspace
+        FTP1.Size = Vector3.new(155.2, 1, 21.2)
+        FTP1.Anchored = true
+        FTP1.Transparency = 0.6
+        FTP1.CanCollide = false
+        FTP1.BrickColor = BrickColor.new("Dark indigo")
+        FTP1.Position = Vector3.new(0, 171.9, 130.9)
+        FTP1.Name = "FTP1_Range_Vis" 
+
+        local FTP2 = Instance.new("Part")
+        FTP2.Parent = workspace
+        FTP2.Size = Vector3.new(155.2, 1, 21.2)
+        FTP2.Anchored = true
+        FTP2.Transparency = 0.6
+        FTP2.CanCollide = false
+        FTP2.BrickColor = BrickColor.new("Dark indigo")
+        FTP2.Position = Vector3.new(0, 171.9, 425.1)
+        FTP2.Name = "FTP2_Range_Vis" 
+
+        -- Outline 1
+        local O11 = Instance.new("Part")
+        O11.Parent = FTP1
+        O11.Size = Vector3.new(0.4, 0.2, 21.2)
+        O11.Anchored = true
+        O11.BrickColor = BrickColor.new("White")
+        O11.Material = Enum.Material.Neon
+        O11.Position = Vector3.new(-77.4, 172.3, 130.9)
+        O11.Name = "Outline1.1"
+
+        local O12 = Instance.new("Part")
+        O12.Parent = FTP1
+        O12.Size = Vector3.new(0.4, 0.2, 21.2)
+        O12.Anchored = true
+        O12.BrickColor = BrickColor.new("White")
+        O12.Material = Enum.Material.Neon
+        O12.Position = Vector3.new(77.8, 172.3, 130.9)
+        O12.Name = "Outline1.2"
+
+        local O13 = Instance.new("Part")
+        O13.Parent = FTP1
+        O13.Size = Vector3.new(0.4, 0.2, 155.6)
+        O13.Anchored = true
+        O13.BrickColor = BrickColor.new("White")
+        O13.Material = Enum.Material.Neon
+        O13.Position = Vector3.new(0.2, 172.3, 141.5)
+        O13.Name = "Outline1.3"
+        O13.Orientation = Vector3.new(0, 90, 0)
+
+        -- Outline 2
+        local O21 = Instance.new("Part")
+        O21.Parent = FTP2
+        O21.Size = Vector3.new(0.4, 0.2, 21.2)
+        O21.Anchored = true
+        O21.BrickColor = BrickColor.new("White")
+        O21.Material = Enum.Material.Neon
+        O21.Position = Vector3.new(-77.4, 172.3, 425.3)
+        O21.Name = "Outline2.1"
+
+        local O22 = Instance.new("Part")
+        O22.Parent = FTP2
+        O22.Size = Vector3.new(0.4, 0.2, 21.2)
+        O22.Anchored = true
+        O22.BrickColor = BrickColor.new("White")
+        O22.Material = Enum.Material.Neon
+        O22.Position = Vector3.new(77.8, 172.3, 425.3)
+        O22.Name = "Outline2.2"
+
+        local O23 = Instance.new("Part")
+        O23.Parent = FTP2
+        O23.Size = Vector3.new(0.4, 0.2, 155.6)
+        O23.Anchored = true
+        O23.BrickColor = BrickColor.new("White")
+        O23.Material = Enum.Material.Neon
+        O23.Position = Vector3.new(0.2, 172.3, 414.7)
+        O23.Name = "Outline2.3"
+        O23.Orientation = Vector3.new(0, 90, 0)
+    else
+        if workspace:FindFirstChild("FTP1_Range_Vis") then workspace.FTP1_Range_Vis:Destroy() end
+        if workspace:FindFirstChild("FTP2_Range_Vis") then workspace.FTP2_Range_Vis:Destroy() end
+    end
+end
+
+local function ToggleTackyRange(enabled)
+    if enabled then
+        local TACKY1 = Instance.new("Part")
+        TACKY1.Parent = workspace
+        TACKY1.Size = Vector3.new(216.8, 1, 21.2)
+        TACKY1.Anchored = true
+        TACKY1.Transparency = 0.6
+        TACKY1.CanCollide = false
+        TACKY1.BrickColor = BrickColor.new("Lime green")
+        TACKY1.Position = Vector3.new(0, 171.9, 425.1)
+        TACKY1.Name = "TACKY1_Range_Vis" 
+
+        local TACKY12 = Instance.new("Part")
+        TACKY12.Parent = TACKY1
+        TACKY12.Size = Vector3.new(30.8, 1, 58.8)
+        TACKY12.Anchored = true
+        TACKY12.Transparency = 0.6
+        TACKY12.CanCollide = false
+        TACKY12.BrickColor = BrickColor.new("Lime green")
+        TACKY12.Position = Vector3.new(93.4, 171.9, 465.1)
+        TACKY12.Name = "TACKY12"
+
+        local TACKY123 = Instance.new("Part")
+        TACKY123.Parent = TACKY1
+        TACKY123.Size = Vector3.new(30.8, 1, 58.8)
+        TACKY123.Anchored = true
+        TACKY123.Transparency = 0.6
+        TACKY123.CanCollide = false
+        TACKY123.BrickColor = BrickColor.new("Lime green")
+        TACKY123.Position = Vector3.new(-92.6, 171.9, 465.1)
+        TACKY123.Name = "TACKY123"
+
+        -- Outline T1
+        local T21 = Instance.new("Part")
+        T21.Parent = TACKY1
+        T21.Size = Vector3.new(0.4, 0.2, 80)
+        T21.Anchored = true
+        T21.BrickColor = BrickColor.new("White")
+        T21.Material = Enum.Material.Neon
+        T21.Position = Vector3.new(-108, 172.3, 454.7)
+        T21.Name = "Outline2.1"
+
+        local T22 = Instance.new("Part")
+        T22.Parent = TACKY1
+        T22.Size = Vector3.new(0.4, 0.2, 80)
+        T22.Anchored = true
+        T22.BrickColor = BrickColor.new("White")
+        T22.Material = Enum.Material.Neon
+        T22.Position = Vector3.new(108.8, 172.3, 454.7)
+        T22.Name = "Outline2.2"
+
+        local T23 = Instance.new("Part")
+        T23.Parent = TACKY1
+        T23.Size = Vector3.new(0.4, 0.2, 217)
+        T23.Anchored = true
+        T23.BrickColor = BrickColor.new("White")
+        T23.Material = Enum.Material.Neon
+        T23.Position = Vector3.new(0.3, 172.3, 414.7)
+        T23.Name = "Outline2.3"
+        T23.Orientation = Vector3.new(0, 90, 0)
+
+        -- =========================
+        --  TACKY2
+        -- =========================
+        local TACKY2 = Instance.new("Part")
+        TACKY2.Parent = workspace
+        TACKY2.Size = Vector3.new(216.8, 1, 21.2)
+        TACKY2.Anchored = true
+        TACKY2.Transparency = 0.6
+        TACKY2.CanCollide = false
+        TACKY2.BrickColor = BrickColor.new("Lime green")
+        TACKY2.Position = Vector3.new(0, 171.9, 130.7)
+        TACKY2.Name = "TACKY2_Range_Vis" 
+        TACKY2.Orientation = Vector3.new(0, 180, 0)
+
+        local TACKY22 = Instance.new("Part")
+        TACKY22.Parent = TACKY2
+        TACKY22.Size = Vector3.new(30.8, 1, 58.8)
+        TACKY22.Anchored = true
+        TACKY22.Transparency = 0.6
+        TACKY22.CanCollide = false
+        TACKY22.BrickColor = BrickColor.new("Lime green")
+        TACKY22.Position = Vector3.new(-93.4, 171.9, 90.7)
+        TACKY22.Name = "TACKY22"
+        TACKY22.Orientation = Vector3.new(0, 180, 0)
+
+        local TACKY223 = Instance.new("Part")
+        TACKY223.Parent = TACKY2
+        TACKY223.Size = Vector3.new(30.8, 1, 58.8)
+        TACKY223.Anchored = true
+        TACKY223.Transparency = 0.6
+        TACKY223.CanCollide = false
+        TACKY223.BrickColor = BrickColor.new("Lime green")
+        TACKY223.Position = Vector3.new(92.6, 171.9, 90.7)
+        TACKY223.Name = "TACKY223"
+        TACKY223.Orientation = Vector3.new(0, 180, 0)
+
+        -- Outline T2
+        local T11 = Instance.new("Part")
+        T11.Parent = TACKY2
+        T11.Size = Vector3.new(0.4, 0.2, 80)
+        T11.Anchored = true
+        T11.BrickColor = BrickColor.new("White")
+        T11.Material = Enum.Material.Neon
+        T11.Position = Vector3.new(108, 172.3, 101.1)
+        T11.Name = "Outline2.1"
+        T11.Orientation = Vector3.new(0, 180, 0)
+
+        local T12 = Instance.new("Part")
+        T12.Parent = TACKY2
+        T12.Size = Vector3.new(0.4, 0.2, 80)
+        T12.Anchored = true
+        T12.BrickColor = BrickColor.new("White")
+        T12.Material = Enum.Material.Neon
+        T12.Position = Vector3.new(-108.8, 172.3, 101.1)
+        T12.Name = "Outline2.2"
+        T12.Orientation = Vector3.new(0, 180, 0)
+
+        local T13 = Instance.new("Part")
+        T13.Parent = TACKY2
+        T13.Size = Vector3.new(0.4, 0.2, 217)
+        T13.Anchored = true
+        T13.BrickColor = BrickColor.new("White")
+        T13.Material = Enum.Material.Neon
+        T13.Position = Vector3.new(-0.3, 172.3, 141.1)
+        T13.Name = "Outline2.3"
+        T13.Orientation = Vector3.new(0, -90, 0)
+    else
+        if workspace:FindFirstChild("TACKY1_Range_Vis") then workspace.TACKY1_Range_Vis:Destroy() end
+        if workspace:FindFirstChild("TACKY2_Range_Vis") then workspace.TACKY2_Range_Vis:Destroy() end
+    end
+end
+-- Range End
+
+
+
+
+local PartConnections = {}
+_G.PartDistances = {
+    ["Left Leg"] = 0, ["Right Leg"] = 0, ["Torso"] = 0, ["Head"] = 0, ["GK"] = 0,
+}
+local GK_PARTS = {"Right Arm", "Left Arm"}
+
+local function HandlePartReach(PartName, Distance)
+    local IsGK = (PartName == "GK")
+    local TargetParts = IsGK and GK_PARTS or {PartName}
+
+    if Distance <= 0 then
+        if PartConnections[PartName] then
+            PartConnections[PartName]:Disconnect()
+            PartConnections[PartName] = nil
+        end
+        return
+    end
+
+    _G.PartDistances[PartName] = Distance
+
+    if not PartConnections[PartName] then
+        PartConnections[PartName] = RunService.RenderStepped:Connect(function()
+            local char = Players.LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            local Targets = {}
+            local MatchBall = workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS")
+            if MatchBall then table.insert(Targets, MatchBall) end
+
+            local PracticeFolder = workspace:FindFirstChild("Practice")
+            if PracticeFolder then
+                for _, ball in ipairs(PracticeFolder:GetChildren()) do
+                    if ball.Name == "PSoccerBall" and ball:IsA("BasePart") then
+                        table.insert(Targets, ball)
+                    end
+                end
+            end
+
+            for _, Target in ipairs(Targets) do
+                if (root.Position - Target.Position).Magnitude <= _G.PartDistances[PartName] then
+                    for _, pName in ipairs(TargetParts) do
+                        local p = char:FindFirstChild(pName)
+                        if p then
+                            firetouchinterest(p, Target, 0)
+                            firetouchinterest(p, Target, 1)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+
+
+-- =========================================
+-- TAB GROUP
+-- =========================================
+local function LocalMessage(Title, Text)
+    game.StarterGui:SetCore("SendNotification", {
+        ["Title"] = Title,
+        ["Text"] = Text,
+        ["Duration"] = 20
+    })
+end
+
+LocalMessage("TPS: Ultimate Soccer", "Welcome To OceaHub!")
+
+-- 1. Library
+local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+
+-- 2. Tab
+local Window = MacLib:Window({
+    Title = "OceaHub",
+    Subtitle = "Public Script",
+    Size = UDim2.fromOffset(850, 600),
+    DragStyle = 1,
+    Keybind = Enum.KeyCode.RightControl, 
+    AcrylicBlur = true,
+    ShowUserInfo = true,
+})
+    -- [[ MUSIC ]]
+    local Sound = Instance.new("Sound")
+    Sound.Parent = game:GetService("SoundService")
+    Sound.SoundId = "rbxassetid://98777348372282" -- 
+    Sound.Volume = 1 -- VOICE LEVEL ( 0-1 )
+    Sound.Looped = false 
+    Sound:Play()
+
+    game:GetService("Debris"):AddItem(Sound, 10)
+
+local tabGroup = Window:TabGroup()
+
+local tabs = {
+    FireTouch = tabGroup:Tab({ Name = "FireTouch", Image = "rbxassetid://18821914323" }),
+    React     = tabGroup:Tab({ Name = "React", Image = "rbxassetid://18821914323" }),
+    Boosters  = tabGroup:Tab({ Name = "Boosters", Image = "rbxassetid://18821914323" }),
+    Range     = tabGroup:Tab({ Name = "Range", Image = "rbxassetid://18821914323" }),
+    AutoSkill = tabGroup:Tab({ Name = "Auto Skill", Image = "rbxassetid://18821914323" }),
+    Misc      = tabGroup:Tab({ Name = "Misc", Image = "rbxassetid://18821914323" }),
+    Settings  = tabGroup:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" }),
+}
+
+-- =========================================
+-- SECTIONS
+-- =========================================
+local sections = {
+    FireTouchLeft = tabs.FireTouch:Section({ Side = "Left" }),
+    ReactLeft     = tabs.React:Section({ Side = "Left" }),
+    ReactRight    = tabs.React:Section({ Side = "Right" }), 
+    BoostersLeft  = tabs.Boosters:Section({ Side = "Left" }),
+    RangeLeft     = tabs.Range:Section({ Side = "Left" }),
+    AutoSkillLeft = tabs.AutoSkill:Section({ Side = "Left" }),
+    MiscLeft      = tabs.Misc:Section({ Side = "Left" }),
+}
+
+-- Settings
+MacLib:SetFolder("OceaHub")
+tabs.Settings:InsertConfigSection("Left")
+
+tabs.FireTouch:Select()
+
+----------------------------------------
+-- FIRETOUCH TAB 
+----------------------------------------
+
+sections.FireTouchLeft:Header({
+    Name = "FireTouch"
+})
+
+local function CreateReachSlider(partName, initialValue)
+    sections.FireTouchLeft:Slider({
+        Name = partName .. " Studs",
+        Default = initialValue or 0,
+        Minimum = 0,
+        Maximum = 30,
+        Precision = 1,
+        DisplayMethod = "Value",
+        Callback = function(Value)
+            local FloorValue = math.floor(Value * 10) / 10
+            HandlePartReach(partName, FloorValue)
+        end
+    })
+end
+
+CreateReachSlider("Left Leg")
+CreateReachSlider("Right Leg")
+CreateReachSlider("Torso")
+CreateReachSlider("Head")
+CreateReachSlider("GK")
+
+----------------------------------------
+-- REACT TAB 
+----------------------------------------
+
+sections.ReactLeft:Header({
+    Name = "React Enhancements"
+})
+
+sections.ReactLeft:Button({
+    Name = "Better React",
+    Callback = function()
+        local mt = getrawmetatable(game)
+        local oldNC = mt.__namecall
+        setreadonly(mt, false)
+
+        mt.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            if not checkcaller()
+                and getnamecallmethod() == "FireServer"
+                and self == workspace.FE.Scorer.RemoteEvent then
+                pcall(function()
+                    workspace.FE.Scorer.RemoteEvent1:FireServer(unpack(args))
+                    workspace.FE.Scorer.RemoteEvent2:FireServer(unpack(args))
+                end)
+                return
+            end
+            return oldNC(self, unpack(args))
+        end)
+
+        setreadonly(mt, true)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "Better Hit Registration",
+    Callback = function()
+        local mt = getrawmetatable(game)
+        local oldNC = mt.__namecall
+
+        if not mt.__oldNC then
+            mt.__oldNC = oldNC
+        end
+
+        local currentOldNC = mt.__oldNC
+        setreadonly(mt, false)
+
+        mt.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            if not checkcaller()
+                and getnamecallmethod() == "FireServer"
+                and self == workspace.FE.Scorer.RemoteEvent then
+                for _ = 1, 3 do
+                    pcall(function()
+                        workspace.FE.Scorer.RemoteEvent1:FireServer(unpack(args))
+                        workspace.FE.Scorer.RemoteEvent:FireServer(unpack(args))
+                    end)
+                end
+                return
+            end
+            return currentOldNC(self, unpack(args))
+        end)
+
+        setreadonly(mt, true)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "React Killer",
+    Callback = function()
+        local mt = getrawmetatable(game)
+        local oldNC = mt.__namecall
+
+        if not mt.__oldNC then
+            mt.__oldNC = oldNC
+        end
+
+        local currentOldNC = mt.__oldNC
+        setreadonly(mt, false)
+
+        mt.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            if not checkcaller()
+                and getnamecallmethod() == "FireServer"
+                and self == workspace.FE.Scorer.RemoteEvent then
+                for _ = 1, 10 do
+                    if workspace:FindFirstChild("FE") then
+                        local fe = workspace.FE
+                        if fe:FindFirstChild("Keep") and fe.Keep:FindFirstChild("GK") then
+                            pcall(function() fe.Keep.GK:FireServer(unpack(args)) end)
+                        end
+                        if fe:FindFirstChild("GK") then
+                            local gk = fe.GK
+                            if gk:FindFirstChild("BGKSaves") then pcall(function() gk.BGKSaves:FireServer(unpack(args)) end) end
+                            if gk:FindFirstChild("BGKP") then pcall(function() gk.BGKP:FireServer(unpack(args)) end) end
+                            if gk:FindFirstChild("GGKP") then pcall(function() gk.GGKP:FireServer(unpack(args)) end) end
+                        end
+                    end
+                end
+                return
+            end
+            return currentOldNC(self, unpack(args))
+        end)
+
+        setreadonly(mt, true)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "Defense React",
+    Callback = function()
+        _G.SmartDefense = true
+        local lp = game.Players.LocalPlayer
+        
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if not _G.SmartDefense then return end
+            
+            local char = lp.Character
+            local ball = workspace.TPSSystem:FindFirstChild("TPS") or 
+                         workspace:FindFirstChild("Practice"):FindFirstChild("PSoccerBall") or
+                         workspace:FindFirstChild("TPS")
+
+            if char and ball then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local dist = (root.Position - ball.Position).Magnitude
+                    
+                    if dist < 5.5 then
+                        local isOwner = false
+                        local owner = ball:FindFirstChild("Owner")
+                        if owner and owner.Value == lp.Name then isOwner = true end
+
+                        if not isOwner then
+                            for _, v in pairs(ball:GetChildren()) do
+                                pcall(function()
+                                    if v:IsA("BodyVelocity") then
+                                        v.Velocity = Vector3.new(0,0,0)
+                                    elseif v:IsA("AngularVelocity") then
+                                        v.AngularVelocity = Vector3.new(0,0,0)
+                                    elseif v:IsA("BodyForce") or v:IsA("Force") then
+                                        v.Force = Vector3.new(0,0,0)
+                                    end
+                                end)
+                            end
+                            ball.AssemblyLinearVelocity = ball.AssemblyLinearVelocity * 0.05
+                        end
+                    end
+                end
+            end
+        end)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "Rime React",
+    Callback = function()
+local mt = getrawmetatable(game)
+local oldNC = mt.__namecall
+setreadonly(mt, false)
+
+_G.RimeReactActive = true
+
+local function bypassModule()
+    pcall(function()
+        local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
+        local modules = {
+            backpack:FindFirstChild("ToolDribble") and backpack.ToolDribble:FindFirstChild("DribbleModule"),
+            backpack:FindFirstChild("ToolDribble") and backpack.ToolDribble:FindFirstChild("DribbleLModule")
+        }
+        
+        for _, mod in pairs(modules) do
+            if mod then
+                for i = 1, 20 do
+                    local name, val = debug.getupvalue(require(mod).Dribble, i)
+                    if name == "v_u_2" then debug.setupvalue(require(mod).Dribble, i, true) end
+                    if name == "v_u_3" then debug.setupvalue(require(mod).Dribble, i, false) end
+                end
+            end
+        end
+    end)
+end
+
+mt.__namecall = newcclosure(function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+
+    if _G.RimeReactActive and not checkcaller() and method == "FireServer" then
+        if self == workspace.FE.Scorer.RemoteEvent then
+            bypassModule() 
+
+            pcall(function()
+                local ball = workspace.TPSSystem:FindFirstChild("TPS") or workspace:FindFirstChild("PSoccerBall")
+                if ball and ball:FindFirstChild("APGBDelay") then ball.APGBDelay:Destroy() end
+            end)
+
+            workspace.FE.Scorer.RemoteEvent1:FireServer(unpack(args))
+            workspace.FE.Scorer.RemoteEvent2:FireServer(unpack(args))
+            for i = 1, 3 do
+                oldNC(self, unpack(args))
+            end
+            return
+        end
+    end
+    return oldNC(self, unpack(args))
+end)
+
+setreadonly(mt, true)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "Zero Delay",
+    Callback = function()
+        pcall(function()
+            game:GetService("RunService").Heartbeat:Connect(function()
+                pcall(function()
+                    local tpsPart = workspace.TPSSystem and workspace.TPSSystem:FindFirstChild("TPS")
+                    if tpsPart then
+                        for _, item in pairs(tpsPart:GetChildren()) do
+                            -- Senin attığın APGBDelay'i ve diğer potansiyel yavaşlatıcıları siler
+                            if item.Name == "APGBDelay" or item.Name:find("Wait") then
+                                item:Destroy()
+                            end
+                        end
+                    end
+                end)
+            end)
+
+            local FE = game:GetService("ReplicatedStorage"):FindFirstChild("FE")
+            if FE then
+                local importantRemotes = {"ToolDribble", "ToolShoot", "RUpdate", "Sprint", "Ping"}
+                for _, name in pairs(importantRemotes) do
+                    local remote = FE:FindFirstChild(name)
+                    if remote and remote:IsA("RemoteEvent") then
+                        -- Paketlerin işlenme önceliğini artırır (Read-only hatası vermez)
+                        pcall(function()
+                            sethiddenproperty(remote, "ReplicationFocus", Enum.ReplicationFocus.Always)
+                        end)
+                    end
+                end
+
+                if FE:FindFirstChild("Ping") then
+                    FE.Ping.OnClientEvent:Connect(function()
+                        FE.Ping:FireServer()
+                    end)
+                end
+            end
+            
+            settings().Network.IncomingReplicationLag = 0
+        end)
+    end
+})
+
+sections.ReactLeft:Button({
+    Name = "Pure React",
+    Callback = function()
+        if _G.PureReactStarted then return end 
+        _G.PureReactStarted = true
+
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local RunService = game:GetService("RunService")
+
+        local KILL_RANGE = 5.5 
+        local KILL_INTENSITY = 20 
+
+        RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+            local ball = workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS") 
+                       or (workspace:FindFirstChild("Practice") and workspace.Practice:FindFirstChild("PSoccerBall"))
+
+            if ball then
+                local dist = (char.HumanoidRootPart.Position - ball.Position).Magnitude
+
+                if dist <= KILL_RANGE then
+                    for _, plyr in ipairs(Players:GetPlayers()) do
+                        if plyr ~= LocalPlayer and plyr.Character then
+                            for _, part in ipairs(plyr.Character:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    for i = 1, KILL_INTENSITY do
+                                        firetouchinterest(part, ball, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+})
+----------------------------------------
+-- FIVEROSE REACTS
+----------------------------------------
+
+
+sections.ReactLeft:Button({
+    Name = "Main React", 
+    Callback = function()
+        local lp = game.Players.LocalPlayer
+        local ScorerRemote = workspace:WaitForChild("FE"):WaitForChild("Scorer"):WaitForChild("RemoteEvent")
+
+        local old; old = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+
+            if not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+                if self == ScorerRemote then
+                    task.spawn(function()
+                        local ball = args[1] 
+
+                        if ball and typeof(ball) == "Instance" then
+                            for i = 1, 5 do
+                                workspace.FE.Keep.KeepP:FireServer(ball)
+                            end
+
+                            for i = 1, 5 do
+                                workspace.FE.Attach.RemoteEvent:FireServer(ball)
+                            end
+                            
+                        end
+                    end)
+                end
+            end
+            return old(self, ...)
+        end)
+    end
+})
+sections.ReactLeft:Button({
+    Name = "GK React Killer", 
+    Callback = function()
+        local lp = game.Players.LocalPlayer
+        local ScorerRemote = workspace:WaitForChild("FE"):WaitForChild("Scorer"):WaitForChild("RemoteEvent")
+
+        local old; old = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+
+            if not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+                if self == ScorerRemote then
+                    task.spawn(function()
+                        local ball = args[1] 
+                        
+                        if ball and typeof(ball) == "Instance" then
+                            for i = 1, 35 do 
+                                workspace.FE.Keep.GK:FireServer(ball)
+                                workspace.FE.GK.BGKSaves:FireServer(ball)
+                                workspace.FE.GK.BGKP:FireServer(ball)
+                                workspace.FE.GK.GGKP:FireServer(ball)
+                                
+                                if i % 7 == 0 then task.wait() end 
+                            end
+                        end
+                    end)
+                end
+            end
+            return old(self, ...)
+        end)
+    end
+})
+----------------------------------------
+-- BOOSTERS TAB 
+----------------------------------------
+
+-- LEFT: Stamina
+local StaminaSection = tabs.Boosters:Section({ Side = "Left" })
+
+StaminaSection:Header({ Name = "Stamina" })
+
+StaminaSection:Button({
+    Name = "Instant Stamina Adder",
+    Callback = function()
+        local args = {1355887714, "SkillG", false}
+        if workspace.FE and workspace.FE.PlayerCard and workspace.FE.PlayerCard.Boost then
+            pcall(function()
+                workspace.FE.PlayerCard.Boost:FireServer(unpack(args))
+            end)
+        end
+    end
+})
+
+StaminaSection:Button({
+    Name = "Infinite Stamina",
+    Callback = function()
+        local oldFireServer
+        oldFireServer = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            if method == "FireServer" and tostring(self) == "Sprint" then
+                args[1] = "Ended"
+                return oldFireServer(self, unpack(args))
+            end
+            return oldFireServer(self, ...)
+        end)
+
+        local player = game.Players.LocalPlayer
+        local char = player.Character or player.CharacterAdded:Wait()
+        char.Humanoid.WalkSpeed = 22
+
+        local mouse = player:GetMouse()
+        mouse.KeyDown:Connect(function(key)
+            if key:lower() == "r" then
+                char.Humanoid.WalkSpeed = 16
+            end
+        end)
+
+        mouse.Button1Down:Connect(function()
+            char.Humanoid.WalkSpeed = 22
+        end)
+    end
+})
+
+------------------------------------------------
+-- RIGHT: MS Boost + Boost 
+------------------------------------------------
+local BoostersRight = tabs.Boosters:Section({ Side = "Right" })
+
+-- MS Boost Header
+BoostersRight:Header({ Name = "MS Boost (Clumsy)" })
+
+BoostersRight:Input({
+    Name = "MS Increase Value",
+    Placeholder = "Example: 0.1",
+    AcceptedCharacters = "NumbersAndDecimal",
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            settings().Network.IncomingReplicationLag = num
+            Window:Notify({
+                Title = "MS Boost",
+                Description = "Ping delay set to: " .. tostring(num * 1000) .. "ms",
+                Lifetime = 3
+            })
+        else
+            Window:Notify({
+                Title = "MS Boost",
+                Description = "Invalid value!",
+                Lifetime = 3
+            })
+        end
+    end
+})
+
+BoostersRight:Divider()
+
+BoostersRight:Header({ Name = "Boost" })
+
+local function AddBoostButton(name, args)
+    BoostersRight:Button({
+        Name = name,
+        Callback = function()
+            if workspace.FE and workspace.FE.PlayerCard and workspace.FE.PlayerCard.Boost then
+                pcall(function()
+                    workspace.FE.PlayerCard.Boost:FireServer(unpack(args))
+                end)
+            end
+        end
+    })
+end
+
+AddBoostButton("Shoot Power",        {1570773663, "SkillA", false})
+AddBoostButton("Pass / Long Power",  {1588192351, "SkillB", false})
+AddBoostButton("Curve Power",        {1309722229, "SkillC", false})
+AddBoostButton("Tackle Power",       {862012192,  "SkillD", false})
+AddBoostButton("Skill Power",        {417646286,  "SkillE", false})
+AddBoostButton("GK Power",           {628934962,  "SkillF", false})
+AddBoostButton("Durability Power",   {5550729447, "SkillH", false})
+----------------------------------------
+-- RANGE TAB 
+----------------------------------------
+
+local RangeLeftSection = tabs.Range:Section({ Side = "Left" })
+local RangeRightSection = tabs.Range:Section({ Side = "Right" })
+
+RangeLeftSection:Toggle({
+    Name = "FTP Range",
+    Default = false,
+    Tooltip = "Displays the range of the FTP League.",
+    Callback = function(value)
+        ToggleFTPRange(value) 
+    end
+})
+
+RangeLeftSection:Toggle({
+    Name = "TACKY Range",
+    Default = false,
+    Tooltip = "Displays the range of the TACKY League.",
+    Callback = function(value)
+        ToggleTackyRange(value) 
+    end
+})
+
+RangeRightSection:Button({
+    Name = "Teleport to Team Side",
+    Callback = function()
+        executeTeleport()
+    end,
+    Tooltip = "Auto teleports you to your team's side(Green Or Blue)"
+})
+local player = game.Players.LocalPlayer
+local lastTouch = 0
+local touchCount = 0
+
+----------------------------------------
+-- FUNCTIONS
+----------------------------------------
+local function performInstantTurn()
+    local char = player.Character
+    if not char then return end
+
+    local tool = char:FindFirstChild("Dribble")
+    
+    if tool then 
+        local dataFolder = char:FindFirstChild("ToolDribble") or player.Backpack:FindFirstChild("ToolDribble")
+        local gui = player:FindFirstChild("PlayerGui")
+        
+        if dataFolder and gui then
+            local turnR = dataFolder:FindFirstChild("TurnR")
+            if turnR then
+                turnR.Value = not turnR.Value
+                local animator = char:FindFirstChild("Humanoid"):FindFirstChild("Animator")
+                local anims = gui:FindFirstChild("Animations")
+                if animator and anims then
+                    local animName = turnR.Value and "Turn" or "TurnL"
+                    local animObj = anims:FindFirstChild(animName)
+                    if animObj then
+                        animator:LoadAnimation(animObj):Play()
+                    end
+                end
+            end
+        end
+    end
+end
+
+----------------------------------------
+-- AUTO SKILL TAB
+----------------------------------------
+local AutoSkillLeftSection = tabs.AutoSkill:Section({ Side = "Left" })
+_G.touchThreshold = 0 
+
+AutoSkillLeftSection:Slider({
+    Name = "Dribble Z Touch Count",
+    Default = 0,
+    Minimum = 0,
+    Maximum = 5,
+    Precision = 0,
+    Suffix = "",
+    Tooltip = "0 = Off | Adjust touch count",
+    Pointer = "AutoSkillTouchCount",
+    Callback = function(value)
+        _G.touchThreshold = value
+    end
+})
+
+player.CharacterAdded:Connect(function(char)
+    char:WaitForChild("HumanoidRootPart").Touched:Connect(function(hit)
+        if _G.touchThreshold == 0 then return end
+        if hit.Name == "TPS" or hit.Name == "PSoccerBall" then
+            if tick() - lastTouch > 0.3 then
+                touchCount = touchCount + 1
+                lastTouch = tick()
+                if touchCount >= _G.touchThreshold then
+                    performInstantTurn()
+                    touchCount = 0 
+                end
+            end
+        end
+    end)
+end)
+
+if player.Character then
+    player.Character:WaitForChild("HumanoidRootPart").Touched:Connect(function(hit)
+        if _G.touchThreshold == 0 then return end
+        if hit.Name == "TPS" or hit.Name == "PSoccerBall" then
+            if tick() - lastTouch > 0.3 then
+                touchCount = touchCount + 1
+                lastTouch = tick()
+                if touchCount >= _G.touchThreshold then
+                    performInstantTurn()
+                    touchCount = 0 
+                end
+            end
+        end
+    end)
+end
+----------------------------------------
+-- MISC TAB
+----------------------------------------
+local MiscLeftSection = tabs.Misc:Section({ Side = "Left" })
+local MiscRightSection = tabs.Misc:Section({ Side = "Right" })
+
+-- FOV Slider (Solda)
+MiscLeftSection:Slider({
+    Name = "FOV",
+    Default = 70,
+    Minimum = 50,
+    Maximum = 120,
+    Precision = 0,
+    Suffix = "",
+    Tooltip = "Changes your field of view",
+    Callback = function(val)
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = val
+        end
+    end
+})
+
+-- Utility Buttons (RIGHT)
+MiscRightSection:Button({
+    Name = "Unlimited Auto Pass Range",
+    Callback = function()
+        local runService = game:GetService("RunService")
+        local player = game.Players.LocalPlayer
+        local MAX_RANGE = 999999 
+
+        if not ToggleConnections.AutoPassRange then
+            ToggleConnections.AutoPassRange = runService.RenderStepped:Connect(function()
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    
+                    local params = RaycastParams.new()
+                    params.FilterType = Enum.RaycastFilterType.Include
+                    params.FilterDescendantsInstances = { workspace }
+                    
+                    local ray = workspace:Raycast(
+                        char.HumanoidRootPart.Position, 
+                        char.HumanoidRootPart.CFrame.LookVector * MAX_RANGE, 
+                        params
+                    )
+
+                    if ray then
+                        for _, target in pairs(game.Players:GetPlayers()) do
+                            if target ~= player and target.TeamColor == player.TeamColor and target.Character then
+                                local head = target.Character:FindFirstChild("Head")
+                                local root = target.Character:FindFirstChild("HumanoidRootPart")
+                                
+                                if head and head:FindFirstChild("PointerGui") and root then
+                                    local dist = (root.Position - ray.Position).Magnitude
+                                    if dist < 50 then 
+                                        head.PointerGui.Enabled = true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end,
+    Tooltip = "Team members' PointerGui will be enabled regardless of distance."
+})
+
+MiscRightSection:Button({
+    Name = "Anti Offside",
+    Callback = function()
+        local function safeExecute(func)
+            local success, _ = pcall(func)
+        end
+        safeExecute(function()
+            local tpsPart = workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS")
+            if tpsPart then
+                for _, name in ipairs({ "Offside", "Offside Check" }) do
+                    local obj = tpsPart:FindFirstChild(name)
+                    if obj then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end)
+    end,
+    Tooltip = "Prevents you from being called offside."
+})
+MiscRightSection:Button({
+    Name = "Optimize FPS",
+    Callback = function()
+        local function safeExecute(func)
+            local success, _ = pcall(func)
+        end
+
+        safeExecute(function()
+            local lighting = game:GetService("Lighting")
+            lighting.GlobalShadows = false
+            lighting.FogEnd = 100000
+            lighting.Brightness = 1
+            lighting.ExposureCompensation = 0
+            lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+            
+            for _, effect in pairs(lighting:GetChildren()) do
+                if effect:IsA("PostEffect") then 
+                    effect.Enabled = false 
+                end
+            end
+
+            local lp = game:GetService("Players").LocalPlayer
+            for _, v in pairs(workspace:GetDescendants()) do
+                -- Karakterinin parçası olmayan her şeyin dokusunu düşürür [cite: 2026-01-29]
+                if not (lp.Character and v:IsDescendantOf(lp.Character)) then
+                    if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                        v.Enabled = false
+                    elseif v:IsA("Decal") or v:IsA("Texture") then
+                        v.Transparency = 0.8 -- %80 şeffaflık ile FPS artışı [cite: 2026-01-29]
+                    end
+                end
+            end
+
+            local toDelete = {
+                "Ads", "Donators", "Leaderboards", "DottedLines", "Drinks", "Memories",
+                "Benchs", "Managers", "CelebrateStand", "Boards", "Camera1", "Cameras",
+                "GKSystem", "Referee", "Referee2", "VARModel", "WLeaderboards"
+            }
+            for _, name in pairs(toDelete) do
+                local obj = workspace:FindFirstChild(name)
+                if obj then obj:Destroy() end
+            end
+
+            local riskyFolders = {"Worn", "JerseysTeam", "JerseyP1", "JerseyP2"}
+            for _, folderName in pairs(riskyFolders) do
+                local folder = workspace:FindFirstChild(folderName)
+                if folder then
+                    for _, item in pairs(folder:GetChildren()) do
+                        if item.Name ~= lp.Name then 
+                            item:Destroy() 
+                        end
+                    end
+                end
+            end
+        end)
+    end,
+    Tooltip = "Optimizes shadows, lights, and stadium models to boost FPS."
+})
+-- Ball Collision Toggle (RIGHT)
+MiscRightSection:Toggle({
+    Name = "Enable Ball Collision",
+    Default = false,
+    Tooltip = "Makes the match and practice balls solid so you can collide with them.",
+    Callback = function(state)
+        _G.BallCollisionActive = state -- Döngü bu değişkenle kontrol edilir
+        
+        -- Kapatıldığında topları orijinal (içinden geçilebilir) grubuna geri döndürür
+        if not state then
+            pcall(function()
+                -- Maç topu sıfırlama
+                local matchBall = workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS")
+                if matchBall then 
+                    matchBall.CollisionGroup = "Ball" 
+                end
+                
+                -- Pratik topları sıfırlama
+                local practiceFolder = workspace:FindFirstChild("Practice")
+                if practiceFolder then
+                    for _, ball in pairs(practiceFolder:GetChildren()) do
+                        if ball.Name == "PSoccerBall" then
+                            ball.CollisionGroup = "Ball"
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Collision Loop (Bunu scriptin en altına, diğer döngülerin yanına koyabilirsin)
+game:GetService("RunService").Stepped:Connect(function()
+    if _G.BallCollisionActive then
+        -- 1. Maç Topu Kontrolü
+        local matchBall = workspace:FindFirstChild("TPSSystem") and workspace.TPSSystem:FindFirstChild("TPS")
+        if matchBall and matchBall:IsA("BasePart") then
+            if matchBall.CollisionGroup ~= "Default" then
+                matchBall.CollisionGroup = "Default"
+                matchBall.CanCollide = true
+            end
+        end
+        
+        -- 2. Pratik Topları Kontrolü
+        local practiceFolder = workspace:FindFirstChild("Practice")
+        if practiceFolder then
+            for _, ball in pairs(practiceFolder:GetChildren()) do
+                if ball.Name == "PSoccerBall" and ball:IsA("BasePart") then
+                    if ball.CollisionGroup ~= "Default" then
+                        ball.CollisionGroup = "Default"
+                        ball.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+end)
+
+----------------------------------------
+-- SETTINGS TAB
+----------------------------------------
+local SettingsLeftSection = tabs.Settings:Section({ Side = "Left" })
+
+SettingsLeftSection:Label({ Text = "Menu Settings" })
+SettingsLeftSection:Keybind({
+    Name = "Menu Keybind",
+    Default = Enum.KeyCode.K,
+    NoUI = true,
+    Text = "Toggle menu visibility"
+})
+
+
+SettingsLeftSection:Button({
+    Name = "Unload Script",
+    Callback = function()
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = 70
+        end
+
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 16
+        end
+
+        ToggleFTPRange(false)
+        ToggleTackyRange(false)
+
+        for partName, connection in pairs(PartConnections) do
+            DisconnectActive(partName)
+        end
+
+        if ToggleConnections.AntiAFK then
+            ToggleConnections.AntiAFK:Disconnect()
+            ToggleConnections.AntiAFK = nil
+            warn("Anti AFK durduruldu.")
+        end
+
+        for _, connection in pairs(ToggleConnections) do
