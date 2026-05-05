@@ -31,7 +31,7 @@ Welcome.BackgroundTransparency = 1
 Welcome.Font = Enum.Font.GothamBold
 Welcome.TextColor3 = Color3.new(1, 1, 1)
 Welcome.TextSize = 16
-Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nUpdates (20.02.2026):\n• Collision Added."
+Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nUpdates (05.05.2026):\n• Tove And Caldrian React Added."
 
 local OK = Instance.new("TextButton", Main)
 OK.Size = UDim2.fromOffset(160, 45)
@@ -309,7 +309,7 @@ local function ToggleTackyRange(enabled)
         T23.Orientation = Vector3.new(0, 90, 0)
 
         -- =========================
-        --  TACKY2
+        --  TACKY2
         -- =========================
         local TACKY2 = Instance.new("Part")
         TACKY2.Parent = workspace
@@ -603,86 +603,92 @@ sections.ReactLeft:Button({
 })
 
 sections.ReactLeft:Button({
-    Name = "React Killer",
+    Name = "Caldrian React",
     Callback = function()
+local lp = game.Players.LocalPlayer
+        local fe = workspace:WaitForChild("FE")
+        local scorer = fe:WaitForChild("Scorer"):WaitForChild("RemoteEvent")
+
         local mt = getrawmetatable(game)
         local oldNC = mt.__namecall
-
-        if not mt.__oldNC then
-            mt.__oldNC = oldNC
-        end
-
-        local currentOldNC = mt.__oldNC
         setreadonly(mt, false)
 
         mt.__namecall = newcclosure(function(self, ...)
             local args = {...}
-            if not checkcaller()
-                and getnamecallmethod() == "FireServer"
-                and self == workspace.FE.Scorer.RemoteEvent then
-                for _ = 1, 10 do
-                    if workspace:FindFirstChild("FE") then
-                        local fe = workspace.FE
-                        if fe:FindFirstChild("Keep") and fe.Keep:FindFirstChild("GK") then
-                            pcall(function() fe.Keep.GK:FireServer(unpack(args)) end)
-                        end
-                        if fe:FindFirstChild("GK") then
-                            local gk = fe.GK
-                            if gk:FindFirstChild("BGKSaves") then pcall(function() gk.BGKSaves:FireServer(unpack(args)) end) end
-                            if gk:FindFirstChild("BGKP") then pcall(function() gk.BGKP:FireServer(unpack(args)) end) end
-                            if gk:FindFirstChild("GGKP") then pcall(function() gk.GGKP:FireServer(unpack(args)) end) end
-                        end
-                    end
-                end
+            local method = getnamecallmethod()
+
+            if not checkcaller() and method == "FireServer" and self == scorer then
+                fe.Scorer.RemoteEvent1:FireServer(unpack(args))
+                fe.Scorer.RemoteEvent2:FireServer(unpack(args))
+                return oldNC(self, unpack(args))
+            end
+
+            if not checkcaller() and method == "FireServer" and self.Name == "ToolTipsD" then
                 return
             end
-            return currentOldNC(self, unpack(args))
+
+            return oldNC(self, unpack(args))
         end)
 
         setreadonly(mt, true)
-    end
+
+        settings().Network.IncomingReplicationLag = 0
+        if fe:FindFirstChild("Ping") then
+            fe.Ping.OnClientEvent:Connect(function()
+                fe.Ping:FireServer()
+            end)
+        end
+    end 
 })
 
 sections.ReactLeft:Button({
-    Name = "Defense React",
+    Name = "Tove React",
     Callback = function()
-        _G.SmartDefense = true
-        local lp = game.Players.LocalPlayer
-        
-        game:GetService("RunService").Heartbeat:Connect(function()
-            if not _G.SmartDefense then return end
-            
-            local char = lp.Character
-            local ball = workspace.TPSSystem:FindFirstChild("TPS") or 
-                         workspace:FindFirstChild("Practice"):FindFirstChild("PSoccerBall") or
-                         workspace:FindFirstChild("TPS")
+local lp = game.Players.LocalPlayer
+        local fe = workspace:WaitForChild("FE")
+        local scorer = fe:WaitForChild("Scorer")
+        local mainRemote = scorer:WaitForChild("RemoteEvent")
 
-            if char and ball then
-                local root = char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    local dist = (root.Position - ball.Position).Magnitude
-                    
-                    if dist < 5.5 then
-                        local isOwner = false
-                        local owner = ball:FindFirstChild("Owner")
-                        if owner and owner.Value == lp.Name then isOwner = true end
+        local mt = getrawmetatable(game)
+        local oldNC = mt.__namecall
+        setreadonly(mt, false)
 
-                        if not isOwner then
-                            for _, v in pairs(ball:GetChildren()) do
-                                pcall(function()
-                                    if v:IsA("BodyVelocity") then
-                                        v.Velocity = Vector3.new(0,0,0)
-                                    elseif v:IsA("AngularVelocity") then
-                                        v.AngularVelocity = Vector3.new(0,0,0)
-                                    elseif v:IsA("BodyForce") or v:IsA("Force") then
-                                        v.Force = Vector3.new(0,0,0)
-                                    end
-                                end)
-                            end
-                            ball.AssemblyLinearVelocity = ball.AssemblyLinearVelocity * 0.05
+        mt.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            local method = getnamecallmethod()
+
+            if not checkcaller() and method == "FireServer" and self == mainRemote then
+                task.spawn(function()
+                    for i = 1, 5 do
+                        scorer.RemoteEvent1:FireServer(unpack(args))
+                        scorer.RemoteEvent2:FireServer(unpack(args))
+                        if scorer:FindFirstChild("RemoteEventGK") then
+                            scorer.RemoteEventGK:FireServer(unpack(args))
                         end
+                        task.wait(0.01) 
                     end
-                end
+                end)
+                return oldNC(self, unpack(args))
+            end
+
+            if not checkcaller() and method == "FireServer" and self.Name == "ToolTipsD" then
+                return 
+            end
+
+            return oldNC(self, unpack(args))
+        end)
+
+        setreadonly(mt, true)
+
+        task.spawn(function()
+            while task.wait(0.5) do
+                pcall(function()
+                    local ball = workspace.TPSSystem:FindFirstChild("TPS") or workspace.Practice:FindFirstChild("PSoccerBall")
+                    if ball then
+                        if ball:FindFirstChild("APGBDelay") then ball.APGBDelay:Destroy() end
+                        if ball:FindFirstChild("Owner") then ball.Owner.Value = lp.Name end
+                    end
+                end)
             end
         end)
     end
