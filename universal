@@ -38,11 +38,11 @@ local STREET_IDs = {
 
 if TPS_IDs[currentPlaceId] then
     -- TPS Scriptini Yükle
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/XHubIlIlIIll"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IIlIllIIllIIlIllIIllIIlIllIIIllIIlI/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIlIlIlIlIl/refs/heads/main/XHubIlIlIIll"))()
 
 elseif FTP_IDs[currentPlaceId] then
     -- FTP Scriptini Yükle
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/IlIlIlllllIllIIlIlIlIlIllIIlIlIIIIlIll/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIl/refs/heads/main/hub"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/IIlIllIIllIIlIllIIllIIlIllIIIllIIlI/IlIlIlIlIlIlIIIIIlIlIlIlIlIlIlIlllIlIlIlIlIlIlIl/refs/heads/main/hub"))()
 
 elseif XLS_IDs[currentPlaceId] then
     -- XLS Scriptini Yükle
