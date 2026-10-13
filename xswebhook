@@ -10,7 +10,7 @@ local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local player = Players.LocalPlayer
 
 -- ⚙️ WEBHOOK URL (Kendi webhook URL'inizi buraya yapıştırın)
-local WEBHOOK_URL = 'https://discord.com/api/webhooks/1482735031188328580/qydGHyz4f4KT0nIzpv3VTsY6SS5-d3yHGtSfUMZbSn0z77jKfDAwhOsCF3VsF6PMr49n'
+local WEBHOOK_URL = 'https://discord.com/api/webhooks/1559636528035004606/vxvdl4yKvZV9BIC5p2E4WFqu_bHoAOtV5Nz7rEHdtYKxT1O6jz1IPlpck32r1GYF1mYq'
 
 -- 📅 Tarih/Saat (GMT+3 Türkiye saati)
 local OSTime = os.time() + (3 * 3600) -- GMT+3 için 3 saat ekle
