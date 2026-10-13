@@ -30,7 +30,7 @@ Welcome.BackgroundTransparency = 1
 Welcome.Font = Enum.Font.GothamBold
 Welcome.TextColor3 = Color3.new(1, 1, 1)
 Welcome.TextSize = 16
-Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nUpdates (05.05.2026):\n• Tove And Caldrian React Added."
+Welcome.Text = "WELCOME " .. LocalPlayer.Name .. "\n\nUpdates (13.10.2026):\n• Ocea Hub Public Published."
 
 local OK = Instance.new("TextButton", Main)
 OK.Size = UDim2.fromOffset(160, 45)
@@ -544,7 +544,7 @@ sections.ReactLeft:Header({
 })
 
 sections.ReactLeft:Button({
-    Name = "Better React",
+    Name = "Better React(broken)",
     Callback = function()
         local mt = getrawmetatable(game)
         local oldNC = mt.__namecall
@@ -602,7 +602,7 @@ sections.ReactLeft:Button({
 })
 
 sections.ReactLeft:Button({
-    Name = "Caldrian React",
+    Name = "Guvory React",
     Callback = function()
 local lp = game.Players.LocalPlayer
         local fe = workspace:WaitForChild("FE")
@@ -641,7 +641,7 @@ local lp = game.Players.LocalPlayer
 })
 
 sections.ReactLeft:Button({
-    Name = "Tove React",
+    Name = "4ltyzer React",
     Callback = function()
 local lp = game.Players.LocalPlayer
         local fe = workspace:WaitForChild("FE")
@@ -694,7 +694,7 @@ local lp = game.Players.LocalPlayer
 })
 
 sections.ReactLeft:Button({
-    Name = "Rime React",
+    Name = "Baraa React",
     Callback = function()
 local mt = getrawmetatable(game)
 local oldNC = mt.__namecall
@@ -751,7 +751,7 @@ setreadonly(mt, true)
 })
 
 sections.ReactLeft:Button({
-    Name = "Zero Delay",
+    Name = "Bolvew Delay",
     Callback = function()
         pcall(function()
             game:GetService("RunService").Heartbeat:Connect(function()
@@ -794,7 +794,7 @@ sections.ReactLeft:Button({
 })
 
 sections.ReactLeft:Button({
-    Name = "Pure React",
+    Name = "Strilify React",
     Callback = function()
         if _G.PureReactStarted then return end 
         _G.PureReactStarted = true
